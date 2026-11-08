@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DompetKu - Pengelola Keuangan Pribadi</title>
+  
+  <!-- PWA Meta Tags for Mobile Installation -->
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DompetKu">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>👛</text></svg>">
+  
+  <!-- Dynamic Web Manifest for Add to Home Screen PWA support -->
+  <link id="manifest-placeholder" rel="manifest">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Family Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200 font-sans pb-12">
+
+  <!-- Main Container -->
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
+
+    <!-- Header & Theme Toggle -->
+    <header class="flex justify-between items-center mb-6">
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-500/20">
+          <i data-lucide="wallet" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight">DompetKu</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Keuangan Pribadi (Khusus di Perangkat Ini)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Install PWA App Button (Appears automatically when supported) -->
+        <button id="pwaInstallBtn" class="hidden px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-md hover:bg-emerald-700 transition items-center gap-1.5">
+          <i data-lucide="download-cloud" class="w-4 h-4"></i>
+          <span>Instal App</span>
+        </button>
+
+        <!-- Help Guide for Vercel & PWA -->
+        <button id="helpBtn" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 transition" title="Panduan Vercel / HP">
+          <i data-lucide="help-circle" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Backup/Restore Dropdown Trigger -->
+        <button id="backupBtn" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 transition" title="Cadangan Data">
+          <i data-lucide="database" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button id="themeToggleBtn" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 transition">
+          <i id="themeIcon" data-lucide="moon" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Modal Backup / Restore (Hidden by default) -->
+    <div id="backupModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+        <button id="closeBackupModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <h3 class="text-lg font-bold mb-1 flex items-center gap-2">
+          <i data-lucide="hard-drive-upload" class="w-5 h-5 text-indigo-500"></i> Cadangkan & Pulihkan
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-5">
+          Simpan data keuangan kamu atau pindahkan ke perangkat lain.
+        </p>
+        
+        <div class="space-y-3">
+          <button id="exportCsvBtn" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition text-sm font-medium">
+            <span class="flex items-center gap-2"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i> Ekspor ke CSV (Excel)</span>
+            <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+          </button>
+          
+          <button id="exportJsonBtn" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 transition text-sm font-medium">
+            <span class="flex items-center gap-2"><i data-lucide="file-json" class="w-4 h-4 text-amber-500"></i> Ekspor Cadangan (JSON)</span>
+            <i data-lucide="download" class="w-4 h-4 text-slate-400"></i>
+          </button>
+
+          <label class="w-full flex items-center justify-between p-3 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 cursor-pointer transition text-sm font-medium">
+            <span class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><i data-lucide="upload" class="w-4 h-4"></i> Impor File JSON</span>
+            <input type="file" id="importJsonInput" accept=".json" class="hidden">
+          </label>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+          <button id="clearAllBtn" class="text-xs text-rose-500 hover:text-rose-600 font-medium flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus Semua Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Help / Vercel Instructions (Hidden by default) -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-700 shadow-2xl relative">
+        <button id="closeHelpModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <h3 class="text-lg font-bold mb-1 flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-5 h-5 text-indigo-500"></i> Cara Pasang di HP (Vercel)
+        </h3>
+        <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 mt-4">
+          <div class="p-3 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+            <p class="font-bold text-indigo-600 dark:text-indigo-400 mb-1">📌 Langkah Deploy di Vercel:</p>
+            <ol class="list-decimal list-inside space-y-1">
+              <li>Upload file <code class="bg-indigo-100 dark:bg-indigo-900 px-1 rounded">index.html</code> ke repository GitHub.</li>
+              <li>Buka <b class="text-slate-800 dark:text-slate-100">Vercel.com</b> & login pakai akun GitHub.</li>
+              <li>Pilih <b>Import Repository</b> lalu klik <b>Deploy</b>.</li>
+            </ol>
+          </div>
+
+          <div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-2xl">
+            <p class="font-bold text-slate-800 dark:text-slate-100 mb-1">📱 Android (Chrome):</p>
+            <p>Buka link Vercel kamu → Tekan titik tiga <b>⋮</b> → Pilih <b>"Add to Home screen"</b> atau klik tombol hijau <b>"Instal App"</b> di atas.</p>
+          </div>
+
+          <div class="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-2xl">
+            <p class="font-bold text-slate-800 dark:text-slate-100 mb-1">🍎 iPhone (Safari):</p>
+            <p>Buka link Vercel kamu di Safari → Tekan tombol <b>Share (Kotak Panah Atas)</b> → Pilih <b>"Add to Home Screen"</b>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Saldo (KPI Cards) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <!-- Total Saldo -->
+      <div class="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-5 text-white shadow-xl shadow-indigo-600/15 relative overflow-hidden">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+        <p class="text-xs font-medium text-indigo-100 mb-1">Total Saldo Bersih</p>
+        <h2 id="totalBalance" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Rp 0</h2>
+        <div class="mt-3 flex items-center text-xs text-indigo-200">
+          <span class="bg-white/20 px-2 py-0.5 rounded-full" id="balanceStatus">Seimbang</span>
+        </div>
+      </div>
+
+      <!-- Total Pemasukan -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700/60 shadow-sm relative">
+        <div class="flex justify-between items-start mb-2">
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Pemasukan</p>
+          <span class="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <h2 id="totalIncome" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Rp 0</h2>
+      </div>
+
+      <!-- Total Pengeluaran -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700/60 shadow-sm relative">
+        <div class="flex justify-between items-start mb-2">
+          <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Pengeluaran</p>
+          <span class="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
+            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <h2 id="totalExpense" class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Rp 0</h2>
+      </div>
+    </div>
+
+    <!-- Main Content Layout (Form + Analytics / History) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Form tambah transaksi -->
+      <div class="lg:col-span-5 space-y-6">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
+          <h3 class="text-base font-bold mb-4 flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-500"></i> Tambah Transaksi
+          </h3>
+
+          <form id="transactionForm" class="space-y-4">
+            <!-- Jenis Transaksi (Tabs Radio) -->
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-700/50 rounded-2xl">
+              <label class="cursor-pointer">
+                <input type="radio" name="type" value="expense" class="peer hidden" checked>
+                <div class="py-2 text-center text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 peer-checked:bg-white dark:peer-checked:bg-slate-800 peer-checked:text-rose-600 dark:peer-checked:text-rose-400 peer-checked:shadow-sm transition">
+                  Pengeluaran
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="radio" name="type" value="income" class="peer hidden">
+                <div class="py-2 text-center text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 peer-checked:bg-white dark:peer-checked:bg-slate-800 peer-checked:text-emerald-600 dark:peer-checked:text-emerald-400 peer-checked:shadow-sm transition">
+                  Pemasukan
+                </div>
+              </label>
+            </div>
+
+            <!-- Jumlah / Nominal -->
+            <div>
+              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Nominal (Rp)</label>
+              <div class="relative">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Rp</span>
+                <input type="number" id="amountInput" placeholder="0" min="1" required
+                       class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold">
+              </div>
+            </div>
+
+            <!-- Kategori -->
+            <div>
+              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Kategori</label>
+              <select id="categorySelect" required
+                      class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                <!-- Dynamic categories loaded via JS -->
+              </select>
+            </div>
+
+            <!-- Tanggal -->
+            <div>
+              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Tanggal</label>
+              <input type="date" id="dateInput" required
+                     class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+
+            <!-- Catatan -->
+            <div>
+              <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Catatan / Keterangan</label>
+              <input type="text" id="noteInput" placeholder="Contoh: Makan Siang Nasi Padang"
+                     class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+
+            <button type="submit" 
+                    class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+              <i data-lucide="check" class="w-4 h-4"></i> Simpan Transaksi
+            </button>
+          </form>
+        </div>
+
+        <!-- Breakdown Kategori Pengeluaran -->
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-700/60 shadow-sm">
+          <h3 class="text-base font-bold mb-3 flex items-center justify-between">
+            <span class="flex items-center gap-2"><i data-lucide="pie-chart" class="w-5 h-5 text-indigo-500"></i> Pengeluaran per Kategori</span>
+          </h3>
+          <div id="categoryBreakdown" class="space-y-3">
+            <!-- Dynamic breakdown loaded via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Transaksi History -->
+      <div class="lg:col-span-7">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-700/60 shadow-sm flex flex-col h-full">
+          
+          <!-- Filter & Header -->
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
+            <h3 class="text-base font-bold flex items-center gap-2">
+              <i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Riwayat Transaksi
+            </h3>
+            
+            <div class="flex items-center gap-2">
+              <select id="filterCategory" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Semua Kategori</option>
+              </select>
+              <select id="filterType" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 border-none rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Semua Tipe</option>
+                <option value="expense">Pengeluaran</option>
+                <option value="income">Pemasukan</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- List Items -->
+          <div id="transactionList" class="space-y-2.5 overflow-y-auto max-h-[520px] pr-1 flex-1">
+            <!-- Dynamic transaction items -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="hidden flex-1 flex flex-col items-center justify-center py-12 text-center">
+            <div class="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-full mb-3 text-slate-400">
+              <i data-lucide="receipt" class="w-8 h-8"></i>
+            </div>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Belum ada transaksi</p>
+            <p class="text-xs text-slate-400 mt-1">Tambahkan catatan keuangan pertama kamu melalui form di sebelah kiri.</p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    // Generate Web Manifest dynamically for PWA compliance
+    (function injectManifest() {
+      const manifest = {
+        name: "DompetKu Keuangan Harian",
+        short_name: "DompetKu",
+        start_url: window.location.href,
+        display: "standalone",
+        background_color: "#0f172a",
+        theme_color: "#4f46e5",
+        icons: [
+          {
+            src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%234f46e5'/><text x='50' y='68' font-size='55' text-anchor='middle' fill='white'>👛</text></svg>",
+            sizes: "192x192 512x512",
+            type: "image/svg+xml",
+            purpose: "any maskable"
+          }
+        ]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], {type: 'application/json'});
+      const manifestURL = URL.createObjectURL(blob);
+      document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
+    })();
+
+    // PWA Install Prompt Handler
+    let deferredPrompt;
+    const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (pwaInstallBtn) {
+        pwaInstallBtn.classList.remove('hidden');
+        pwaInstallBtn.classList.add('flex');
+      }
+    });
+
+    if (pwaInstallBtn) {
+      pwaInstallBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          pwaInstallBtn.classList.add('hidden');
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    // Categories Preset with Icons and Colors
+    const CATEGORIES = {
+      expense: [
+        { name: 'Makanan & Minuman', icon: 'utensils', color: 'bg-orange-500' },
+        { name: 'Transportasi', icon: 'car', color: 'bg-blue-500' },
+        { name: 'Hiburan', icon: 'gamepad-2', color: 'bg-purple-500' },
+        { name: 'Belanja', icon: 'shopping-bag', color: 'bg-pink-500' },
+        { name: 'Tagihan & Tagihan', icon: 'receipt', color: 'bg-amber-500' },
+        { name: 'Kesehatan', icon: 'heart-pulse', color: 'bg-rose-500' },
+        { name: 'Pendidikan', icon: 'graduation-cap', color: 'bg-cyan-500' },
+        { name: 'Lain-lain', icon: 'more-horizontal', color: 'bg-slate-500' }
+      ],
+      income: [
+        { name: 'Gaji', icon: 'briefcase', color: 'bg-emerald-500' },
+        { name: 'Bonus / Tip', icon: 'gift', color: 'bg-teal-500' },
+        { name: 'Investasi', icon: 'trending-up', color: 'bg-indigo-500' },
+        { name: 'Lain-lain', icon: 'dollar-sign', color: 'bg-sky-500' }
+      ]
+    };
+
+    // State: Membaca data dari localStorage saat aplikasi pertama kali dibuka
+    let transactions = JSON.parse(localStorage.getItem('dompetku_transactions')) || [];
+    let currentTheme = localStorage.getItem('dompetku_theme') || 'light';
+
+    // DOM Elements
+    const transactionForm = document.getElementById('transactionForm');
+    const amountInput = document.getElementById('amountInput');
+    const categorySelect = document.getElementById('categorySelect');
+    const dateInput = document.getElementById('dateInput');
+    const noteInput = document.getElementById('noteInput');
+
+    const totalBalanceEl = document.getElementById('totalBalance');
+    const totalIncomeEl = document.getElementById('totalIncome');
+    const totalExpenseEl = document.getElementById('totalExpense');
+    const balanceStatusEl = document.getElementById('balanceStatus');
+
+    const categoryBreakdown = document.getElementById('categoryBreakdown');
+    const transactionList = document.getElementById('transactionList');
+    const emptyState = document.getElementById('emptyState');
+
+    const filterCategory = document.getElementById('filterCategory');
+    const filterType = document.getElementById('filterType');
+
+    const backupModal = document.getElementById('backupModal');
+    const backupBtn = document.getElementById('backupBtn');
+    const closeBackupModal = document.getElementById('closeBackupModal');
+
+    const helpModal = document.getElementById('helpModal');
+    const helpBtn = document.getElementById('helpBtn');
+    const closeHelpModal = document.getElementById('closeHelpModal');
+
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportJsonBtn = document.getElementById('exportJsonBtn');
+    const importJsonInput = document.getElementById('importJsonInput');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+
+    // Default Input Date to Today
+    dateInput.valueAsDate = new Date();
+
+    // Helper Format Rupiah
+    function formatIDR(amount) {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
+
+    // Update Dropdown Categories based on Type Selected (Expense/Income)
+    function updateCategoryDropdown() {
+      const type = document.querySelector('input[name="type"]:checked').value;
+      const options = CATEGORIES[type] || [];
+      categorySelect.innerHTML = options
+        .map(c => `<option value="${c.name}">${c.name}</option>`)
+        .join('');
+    }
+
+    // Populate Filter Dropdown
+    function populateFilterCategories() {
+      const allCats = [...CATEGORIES.expense, ...CATEGORIES.income];
+      const uniqueCats = Array.from(new Set(allCats.map(c => c.name)));
+      filterCategory.innerHTML = `<option value="all">Semua Kategori</option>` + 
+        uniqueCats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    // Save Transactions: Menyimpan setiap transaksi baru/hapus secara otomatis ke localStorage
+    function saveTransactions() {
+      localStorage.setItem('dompetku_transactions', JSON.stringify(transactions));
+      render();
+    }
+
+    // Toggle Theme (Dark / Light)
+    function initTheme() {
+      if (currentTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').setAttribute('data-lucide', 'sun');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('themeIcon').setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('dompetku_theme', currentTheme);
+      initTheme();
+    });
+
+    // Handle Form Submit
+    transactionForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const type = document.querySelector('input[name="type"]:checked').value;
+      const amount = parseFloat(amountInput.value);
+      const category = categorySelect.value;
+      const date = dateInput.value;
+      const note = noteInput.value.trim();
+
+      if (!amount || amount <= 0) return;
+
+      const newTransaction = {
+        id: 'TRX-' + Date.now(),
+        type,
+        amount,
+        category,
+        date,
+        note: note || (type === 'income' ? 'Pemasukan' : 'Pengeluaran')
+      };
+
+      transactions.unshift(newTransaction);
+      saveTransactions();
+
+      // Reset form input
+      amountInput.value = '';
+      noteInput.value = '';
+      dateInput.valueAsDate = new Date();
+    });
+
+    // Delete Transaction
+    function deleteTransaction(id) {
+      transactions = transactions.filter(t => t.id !== id);
+      saveTransactions();
+    }
+
+    // Find category details for icon & color
+    function getCategoryMeta(name, type) {
+      const list = CATEGORIES[type] || CATEGORIES.expense;
+      const found = list.find(c => c.name === name);
+      if (found) return found;
+      return { icon: 'circle-dollar-sign', color: 'bg-slate-500' };
+    }
+
+    // Calculate Summary Totals & Render UI
+    function render() {
+      const selectedCat = filterCategory.value;
+      const selectedType = filterType.value;
+
+      // Filtered List
+      const filtered = transactions.filter(t => {
+        const catMatch = selectedCat === 'all' || t.category === selectedCat;
+        const typeMatch = selectedType === 'all' || t.type === selectedType;
+        return catMatch && typeMatch;
+      });
+
+      // Overall Totals
+      const totalIncome = transactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const totalExpense = transactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const balance = totalIncome - totalExpense;
+
+      // Update Cards
+      totalBalanceEl.textContent = formatIDR(balance);
+      totalIncomeEl.textContent = formatIDR(totalIncome);
+      totalExpenseEl.textContent = formatIDR(totalExpense);
+
+      if (balance > 0) {
+        balanceStatusEl.textContent = 'Surplus';
+        balanceStatusEl.className = 'bg-emerald-500/20 text-emerald-200 px-2 py-0.5 rounded-full';
+      } else if (balance < 0) {
+        balanceStatusEl.textContent = 'Defisit';
+        balanceStatusEl.className = 'bg-rose-500/20 text-rose-200 px-2 py-0.5 rounded-full';
+      } else {
+        balanceStatusEl.textContent = 'Seimbang';
+        balanceStatusEl.className = 'bg-white/20 text-indigo-100 px-2 py-0.5 rounded-full';
+      }
+
+      // Render Transaction List
+      if (filtered.length === 0) {
+        transactionList.innerHTML = '';
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        transactionList.innerHTML = filtered.map(t => {
+          const meta = getCategoryMeta(t.category, t.type);
+          const isIncome = t.type === 'income';
+          const amountDisplay = (isIncome ? '+ ' : '- ') + formatIDR(t.amount);
+          const amountClass = isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100';
+
+          return `
+            <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-750 rounded-2xl border border-slate-100 dark:border-slate-700/50 hover:bg-slate-100/80 dark:hover:bg-slate-700 transition group">
+              <div class="flex items-center space-x-3 overflow-hidden">
+                <div class="p-2.5 ${meta.color} text-white rounded-xl shadow-sm shrink-0">
+                  <i data-lucide="${meta.icon}" class="w-4 h-4"></i>
+                </div>
+                <div class="truncate">
+                  <p class="text-sm font-semibold truncate">${t.note}</p>
+                  <p class="text-xs text-slate-400">${t.category} • ${t.date}</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 shrink-0">
+                <span class="text-sm font-bold ${amountClass}">${amountDisplay}</span>
+                <button onclick="deleteTransaction('${t.id}')" title="Hapus"
+                        class="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 opacity-80 group-hover:opacity-100 transition">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Category Breakdown (Pengeluaran saja)
+      const expenseTrans = transactions.filter(t => t.type === 'expense');
+      const categoryTotals = {};
+      expenseTrans.forEach(t => {
+        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+      });
+
+      const categoriesSorted = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1]);
+
+      if (categoriesSorted.length === 0) {
+        categoryBreakdown.innerHTML = `<p class="text-xs text-slate-400 py-2">Belum ada data pengeluaran.</p>`;
+      } else {
+        categoryBreakdown.innerHTML = categoriesSorted.map(([catName, amount]) => {
+          const percentage = totalExpense > 0 ? ((amount / totalExpense) * 100).toFixed(1) : 0;
+          const meta = getCategoryMeta(catName, 'expense');
+          return `
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full ${meta.color}"></span> ${catName}
+                </span>
+                <span class="font-semibold text-slate-500">${formatIDR(amount)} (${percentage}%)</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full ${meta.color} rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      lucide.createIcons();
+    }
+
+    // Backup & Restore Handlers
+    backupBtn.addEventListener('click', () => backupModal.classList.remove('hidden'));
+    closeBackupModal.addEventListener('click', () => backupModal.classList.add('hidden'));
+
+    helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+    closeHelpModal.addEventListener('click', () => helpModal.classList.add('hidden'));
+
+    // Export JSON
+    exportJsonBtn.addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `dompetku_backup_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    // Export CSV
+    exportCsvBtn.addEventListener('click', () => {
+      if (transactions.length === 0) return;
+      const headers = ["ID", "Tanggal", "Jenis", "Kategori", "Nominal", "Catatan"];
+      const rows = transactions.map(t => [
+        t.id,
+        t.date,
+        t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+        `"${t.category}"`,
+        t.amount,
+        `"${t.note.replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", encodeURI(csvContent));
+      downloadAnchor.setAttribute("download", `dompetku_export_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    // Import JSON
+    importJsonInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const importedData = JSON.parse(event.target.result);
+          if (Array.isArray(importedData)) {
+            transactions = importedData;
+            saveTransactions();
+            backupModal.classList.add('hidden');
+          }
+        } catch (err) {
+          console.error("Gagal membaca file JSON", err);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Clear All Data
+    clearAllBtn.addEventListener('click', () => {
+      transactions = [];
+      saveTransactions();
+      backupModal.classList.add('hidden');
+    });
+
+    // Event Listeners for Dynamic Form Options & Filters
+    document.querySelectorAll('input[name="type"]').forEach(radio => {
+      radio.addEventListener('change', updateCategoryDropdown);
+    });
+    filterCategory.addEventListener('change', render);
+    filterType.addEventListener('change', render);
+
+    // Initial Setup on Page Load
+    window.onload = function() {
+      initTheme();
+      updateCategoryDropdown();
+      populateFilterCategories();
+      render();
+    };
+  </script>
+</body>
+</html>
